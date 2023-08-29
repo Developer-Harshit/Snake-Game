@@ -1,0 +1,7 @@
+WIDTH, HEIGHT = 240 * 3, 240 * 3
+BLUE = (21, 50, 201)
+RED = (215, 20, 70)
+BG_COLOR = (200, 200, 200)
+RENDER_SCALE = 3
+
+BASE_IMG_PATH = "assets/spirites/"
