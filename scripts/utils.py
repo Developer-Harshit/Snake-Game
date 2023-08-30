@@ -28,6 +28,10 @@ def add_vector(one, two):
     return (one[0] + two[0], one[1] + two[1])
 
 
+def sub_vector(one, two):
+    return (one[0] - two[0], one[1] - two[1])
+
+
 class DemoObject:
     def __init__(self, pos, spirite):
         self.pos = list(pos)
