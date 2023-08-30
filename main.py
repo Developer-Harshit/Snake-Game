@@ -5,7 +5,7 @@ import pygame
 from random import randint, random, choice
 from scripts.utils import DemoObject, load_image, load_images, lerp
 from scripts.tilemap import Tilemap
-from scripts.entity import Player
+from scripts.entity import Entity
 import sys
 
 print("Starting Game")
@@ -42,10 +42,19 @@ class Game:
         self.tilemap = Tilemap(self)
         self.tilemap.create_random(WIDTH * 2, HEIGHT * 2)
 
-        self.player = Player(self)
+        # self.player = Player(self)
+        self.player = Entity(self, (2, 2), "player", 10, 1)
         self.scroll = [0, 0]
 
         # --------------------------------------------------------------------------
+
+    def resize(self):
+        if self.display.get_size() == self.screen.get_size():
+            return
+        self.display = pygame.surface.Surface(self.screen.get_size())
+        self.bg_layer = self.display.copy()
+        self.bg_layer.fill((11, 1, 31))
+        self.bg_layer.set_alpha(150)
 
     def run(self):
         running = True
@@ -53,15 +62,15 @@ class Game:
         while running:
             # Handling scroll -----------------------------------------------------|
 
-            p_pos = self.player.block.get_rect().center
+            p_pos = self.player.get_rect().center
 
             # Lerping to get smooth scroll a+=(b - a) * t
             self.scroll[0] += (
                 p_pos[0] - self.display.get_width() / 2 - self.scroll[0]
-            ) / self.size
+            ) / (self.size)
             self.scroll[1] += (
                 p_pos[1] - self.display.get_height() / 2 - self.scroll[1]
-            ) / self.size
+            ) / (self.size)
             #
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
@@ -73,8 +82,7 @@ class Game:
 
             self.display.blit(self.bg_layer, (0, 0))
             # For Player ----------------------------------------------------------|
-            if frame % 12 == 0:
-                self.player.update()
+            self.player.update(frame)
             self.player.render(self.display, render_scroll)
 
             # Checking Events -----------------------------------------------------|
@@ -87,7 +95,7 @@ class Game:
                     if event.key == pygame.K_ESCAPE:
                         self.quit()
                     if event.key == pygame.K_SPACE:
-                        self.player.add_tail()
+                        self.resize()
 
                     if event.key == pygame.K_w:
                         self.player.change_direction((0, -1))
@@ -101,10 +109,11 @@ class Game:
                     pass
                 if event.type == pygame.KEYUP:
                     pass
-            # Rendering Screen ----------------------------------------------------|
+
             self.screen.blit(self.display, (0, 0))
             pygame.display.update()
             self.clock.tick(60)
+            self.resize()
             frame += 1
 
     def quit(self):
