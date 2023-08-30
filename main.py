@@ -3,7 +3,7 @@
 
 import pygame
 from random import randint, random, choice
-from scripts.utils import DemoObject, load_image, load_images
+from scripts.utils import DemoObject, load_image, load_images, lerp
 from scripts.tilemap import Tilemap
 from scripts.entity import Player
 import sys
@@ -52,19 +52,18 @@ class Game:
         frame = 0
         while running:
             # Handling scroll -----------------------------------------------------|
-            # self.scoll[0] += 1 / self.size
 
-            # self.scoll[1] += 1 / self.size
-            # For Camera ----------------------------------------------------------|
             p_pos = self.player.block.get_rect().center
+
+            # Lerping to get smooth scroll a+=(b - a) * t
             self.scroll[0] += (
                 p_pos[0] - self.display.get_width() / 2 - self.scroll[0]
             ) / self.size
             self.scroll[1] += (
                 p_pos[1] - self.display.get_height() / 2 - self.scroll[1]
             ) / self.size
-            # THats why we are converting it into int
-            render_scroll = ((self.scroll[0]), (self.scroll[1]))
+            #
+            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
             # For Background ------------------------------------------------------|
 

@@ -32,6 +32,10 @@ def sub_vector(one, two):
     return (one[0] - two[0], one[1] - two[1])
 
 
+def lerp(a, b, t):
+    return a + ((b - a) * t)
+
+
 class DemoObject:
     def __init__(self, pos, spirite):
         self.pos = list(pos)
