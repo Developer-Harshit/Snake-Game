@@ -126,10 +126,13 @@ class Enemy(Entity):
         self.start = self.nodemap.map[loc_to_str(self.pos)]
         self.goal = self.nodemap.map[loc_to_str(self.game.player.pos)]
         self.nodemap.reset_cost()
-        self.openset = [self.start]
-        self.start.g = 0
-        self.closeset = []
-        self.cameFrom = {}
+
+        self.start.g, self.openset, self.closeset, self.cameFrom = (
+            0,
+            [self.start],
+            [],
+            {},
+        )
 
     def change_direction(self, my_path):
         if len(my_path) > 1:
@@ -171,8 +174,9 @@ class Enemy(Entity):
         current = False
         for node in self.openset:
             node.heuristics(self.goal)
-            if current and current.f > node.f:
-                current = node
+            if current:
+                if current.f > node.f:
+                    current = node
             else:
                 current = node
         return current

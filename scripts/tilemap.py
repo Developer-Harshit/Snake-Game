@@ -20,9 +20,7 @@ class Tile:
         self.variant = variant
 
         # for A-Star
-        self.g = 10**10
-        self.h = 0
-        self.f = 0
+        self.g, self.h, self.f = 10**10, 0, 0
 
     def get_object(self):
         return {"pos": self.pos, "type": self.type, "variant": self.variant}
@@ -49,19 +47,11 @@ class Tile:
 class Tilemap:
     def __init__(self, game, map={}):
         self.game = game
-
-        # formap of map -------> {'x;y':tileObj,'0;6':tileObj,............}
         self.map = map
-
-        self.zoff = 100
-        self.noise = PerlinNoise(1, randint(20, 1000))
-
+        
     def reset_cost(self):
-        for loc in self.map:
-            tile = self.map[loc]
-            tile.g = 10**10
-            tile.h = 0
-            tile.f = 0
+        for tile in self.map.values():
+            tile.g, tile.h, tile.f = 10**10, 0, 0
 
     def save(self, file_name):
         my_map = {}
