@@ -1,11 +1,15 @@
 # Snake Game
 # Snake Ganan
 
+
+import cProfile
+import pstats
+
 import pygame
 from random import randint, random, choice
 from scripts.utils import DemoObject, load_image, load_images, lerp
 from scripts.tilemap import Tilemap
-from scripts.entity import Entity
+from scripts.entity import Player, Enemy
 import sys
 
 print("Starting Game")
@@ -30,20 +34,17 @@ class Game:
 
         size = 32
         self.size = size
-        self.assets = {
-            "ground": load_images("ground", (size, size)),
-            "wall": load_images("wall", (size, size)),
-            "player": load_image("player.png", (size, size)),
-            "tail": load_image("tail.png", (size, size)),
-        }
+        self.reload_assets()
 
         # --------------------------------------------------------------------------
 
         self.tilemap = Tilemap(self)
-        self.tilemap.create_random(WIDTH * 2, HEIGHT * 2)
+        self.tilemap.load("test.json")
 
         # self.player = Player(self)
-        self.player = Entity(self, (2, 2), "player", 10, 1)
+        self.player = Player(self, (2, 2))
+        self.enemy = Enemy(self, (6, 6))
+
         self.scroll = [0, 0]
 
         # --------------------------------------------------------------------------
@@ -55,6 +56,16 @@ class Game:
         self.bg_layer = self.display.copy()
         self.bg_layer.fill((11, 1, 31))
         self.bg_layer.set_alpha(150)
+
+    def reload_assets(self):
+        size = self.size
+        self.assets = {
+            "ground": load_images("ground", (size, size)),
+            "wall": load_images("wall", (size, size)),
+            "player": load_image("player.png", (size, size)),
+            "enemy": load_image("enemy.png", (size, size)),
+            "tail": load_image("tail.png", (size, size)),
+        }
 
     def run(self):
         running = True
@@ -83,20 +94,31 @@ class Game:
             self.display.blit(self.bg_layer, (0, 0))
             # For Player ----------------------------------------------------------|
             self.player.update(frame)
+
             self.player.render(self.display, render_scroll)
+            if self.player.death > 0:
+                self.player = Player(self, (2, 2))
+
+            # For Enemy -----------------------------------------------------------|
+            self.enemy.update(frame)
+
+            self.enemy.render(self.display, render_scroll)
+            if self.enemy.death > 0:
+                self.enemy = Enemy(self, (2, 2))
 
             # Checking Events -----------------------------------------------------|
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                    self.quit()
+
+                    # self.quit()
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        self.quit()
+                        running = False
+                        # self.quit()
                     if event.key == pygame.K_SPACE:
-                        self.resize()
-
+                        pass
                     if event.key == pygame.K_w:
                         self.player.change_direction((0, -1))
                     if event.key == pygame.K_a:
@@ -124,5 +146,9 @@ class Game:
 
 
 if __name__ == "__main__":
-    Game().run()
+    with cProfile.Profile() as profile:
+        Game().run()
+    result = pstats.Stats(profile)
+    result.sort_stats(pstats.SortKey.TIME)
+    result.dump_stats("prof/result.prof")
 print("Game Over")
