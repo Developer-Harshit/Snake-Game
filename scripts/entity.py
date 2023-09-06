@@ -23,20 +23,15 @@ class Tail:
 
     # Execute it before updating host
     def update(self):
-        if len(self.tail) >= self.count:
-            if self.count:
-                self.tail.pop(0)
-
         if len(self.tail) < self.count:
             self.tail.append(Block(self.game, self.host.pos))
+        if len(self.tail) >= self.count and self.count:
+            self.tail.pop(0)
 
     def render(self, surf, offset):
         img = self.game.assets[(self.host.type + "/" + "tail")]
-        t_len = len(self.tail)
-        for idx, block in enumerate(self.tail):
-            # a_val = remap(idx, 0, t_len, 50, 255)
 
-            # img.set_alpha(int(a_val))
+        for block in self.tail:
             block.render(surf, img, offset)
 
 
@@ -76,7 +71,6 @@ class Entity(Block):
         self.death = 0
 
     def render(self, surf, offset=[0, 0]):
-        self.tail.render(surf, offset)
         img = pygame.transform.rotate(
             self.game.assets[self.type + "/" + "head"], self.rotate
         )
@@ -85,8 +79,8 @@ class Entity(Block):
 
     def update(self, frame):
         if frame % self.update_time == 0 and not self.check_tile_collision():
-            self.change_rotation()
             self.tail.update()
+            self.change_rotation()
             self.pos = add_vector(self.pos, self.direction)
             return True
         return False
@@ -119,7 +113,7 @@ class Entity(Block):
 
 class Enemy(Entity):
     def __init__(self, game, e_type, pos):
-        super().__init__(game, pos, e_type, 13, randint(0, 9))
+        super().__init__(game, pos, e_type, 13, 0)
 
         # for A-Star
         self.nodemap = self.game.tilemap.copy()
@@ -155,12 +149,16 @@ class Enemy(Entity):
             (self.goal.pos[0] - self.pos[0]) ** 2
             + (self.goal.pos[1] - self.pos[1]) ** 2
         ) ** 0.5
-        print(dist)
-        if 1:
+
+        if dist < 25 and random() > 0.3:
+            i = 0
             while 1:
-                my_path = self.a_star()
-                if my_path == False:
+                if i > 100:
                     break
+                i += 1
+
+                my_path = self.a_star()
+
                 if my_path:
                     self.change_direction(my_path)
 
@@ -223,4 +221,30 @@ class Enemy(Entity):
 
 class Player(Entity):
     def __init__(self, game, pos):
-        super().__init__(game, pos, "player", 9, 0)
+        super().__init__(game, pos, "player", 12, 5)
+        self.dashing = 0
+
+    def update(self, frame):
+        self.dashing = max(0, self.dashing - 1)
+
+        if self.dashing > 10:
+            self.update_time = 2
+        else:
+            self.update_time = 12
+
+        super().update(frame)
+
+    def dash(self):
+        if self.dashing <= 0 and len(self.tail.tail) > 1:
+            self.dashing = 24
+            self.tail.count = max(self.tail.count - 1, 1)
+
+            return True
+
+        pass
+
+    def shoot(self):
+        pass
+
+    def ghost(self):
+        pass

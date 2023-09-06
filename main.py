@@ -9,7 +9,7 @@ import pygame
 from random import randint, random, choice
 from scripts.utils import DemoObject, load_image, load_images, lerp
 from scripts.tilemap import Tilemap
-from scripts.entity import Player, Enemy
+from scripts.entity import Player, Enemy, Block
 import sys
 
 print("Starting Game")
@@ -42,7 +42,7 @@ class Game:
         self.tilemap.load("test.json")
 
         self.player = Player(self, (2, 2))
-        self.enemy = Enemy(self, "archer", (6, 6))
+        self.cookie = Block(self, (randint(2, 9), randint(3, 15)))
 
         self.scroll = [0, 0]
 
@@ -61,6 +61,7 @@ class Game:
         self.assets = {
             "ground": load_images("ground", (size, size)),
             "wall": load_images("wall", (size, size)),
+            "cookie": load_image("items/cookie.png", (size, size)),
             "player/head": load_image("player/head.png", (size, size)),
             "player/tail": load_image("player/tail.png", (size, size)),
             "enemy/head": load_image("enemy/head.png", (size, size)),
@@ -86,29 +87,38 @@ class Game:
             ) / (self.size)
 
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+
             # ----------------------------------------------------------------------------------------------|
+
             # Collision_Blocks -----------------------------------------------------------------------------|
+
             self.collide_pos = []
             for block in self.player.tail.tail:
                 if block.pos == self.player.pos:
                     continue
                 self.collide_pos.append(tuple(block.pos))
 
-            for block in self.enemy.tail.tail:
-                if block.pos == self.enemy.pos:
-                    continue
-                self.collide_pos.append(tuple(block.pos))
-
             # For Background -------------------------------------------------------------------------------|
 
             self.display.fill(BG_COLOR)
-
             self.tilemap.render(self.display, render_scroll)
-
             self.display.blit(self.bg_layer, (0, 0))
+
+            # ----------------------------------------------------------------------------------------------|
+            # For Tail -------------------------------------------------------------------------------------|
+
+            self.player.tail.render(self.display, render_scroll)
+
+            # For Cookie ------------------------------------------------------------------------------------|
+            if self.cookie.is_colliding(self.player):
+                self.player.tail.count += 1
+                self.cookie.pos = (randint(3, 18), randint(2, 17))
+            self.cookie.render(self.display, self.assets["cookie"], render_scroll)
+
             # ----------------------------------------------------------------------------------------------|
 
             # For Player -----------------------------------------------------------------------------------|
+
             self.player.update(frame)
 
             self.player.render(self.display, render_scroll)
@@ -117,15 +127,8 @@ class Game:
 
             # ----------------------------------------------------------------------------------------------|
 
-            # For Enemy ------------------------------------------------------------------------------------|
-            self.enemy.update(frame)
-
-            self.enemy.render(self.display, render_scroll)
-            if self.enemy.death > 0:
-                self.enemy = Enemy(self, "archer", (2, 2))
-            # ----------------------------------------------------------------------------------------------|
-
             # Checking Events ------------------------------------------------------------------------------|
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -137,7 +140,7 @@ class Game:
                         running = False
                         # self.quit()
                     if event.key == pygame.K_SPACE:
-                        self.player.tail.count += 1
+                        self.player.dash()
                         pass
                     if event.key == pygame.K_w:
                         self.player.change_direction((0, -1))

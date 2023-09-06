@@ -22,6 +22,9 @@ class Tile:
         # for A-Star
         self.g, self.h, self.f = 10**10, 0, 0
 
+    def copy(self):
+        return Tile(self.pos, self.type, self.variant)
+
     def get_object(self):
         return {"pos": self.pos, "type": self.type, "variant": self.variant}
 
@@ -30,10 +33,10 @@ class Tile:
         return self.g
 
     def heuristics(self, goal):
-        self.h = (
-            (self.pos[0] - goal.pos[0]) ** 2 + (self.pos[1] - goal.pos[1]) ** 2
-        ) ** 0.5
-        # self.h = abs(self.pos[0] - goal.pos[0]) + abs(self.pos[1] - goal.pos[1])
+        # self.h = (
+        #     (self.pos[0] - goal.pos[0]) ** 2 + (self.pos[1] - goal.pos[1]) ** 2
+        # ) ** 0.5
+        self.h = abs(self.pos[0] - goal.pos[0]) + abs(self.pos[1] - goal.pos[1])
         return self.h
 
     def get_neighbours(self, nodemap):
@@ -49,9 +52,9 @@ class Tile:
 
 
 class Tilemap:
-    def __init__(self, game, map={}):
+    def __init__(self, game, n_map={}):
         self.game = game
-        self.map = map
+        self.map = n_map
 
     def reset_cost(self):
         for tile in self.map.values():
@@ -84,7 +87,11 @@ class Tilemap:
         )
 
     def copy(self):
-        return Tilemap(self.game, self.map)
+        my_map = {}
+        for loc in self.map:
+            my_map[loc] = self.map[loc].copy()
+
+        return Tilemap(self.game, my_map)
 
     def get_collision_pos(self):
         result = []
