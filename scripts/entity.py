@@ -1,5 +1,5 @@
 from random import choice, randint, random
-from scripts.utils import add_vector
+from scripts.utils import add_vector, remap
 import pygame
 
 
@@ -7,10 +7,43 @@ def loc_to_str(vect):
     return str(vect[0]) + ";" + str(vect[1])
 
 
+class Tail:
+    def __init__(self, host, game, t_count):
+        self.host = host
+        self.game = game
+        self.tail = []
+
+        self.count = t_count
+
+    def get_global_pos(self, loc, offset=[0, 0]):
+        return (
+            loc[0] * self.game.size - offset[0],
+            loc[1] * self.game.size - offset[1],
+        )
+
+    # Execute it before updating host
+    def update(self):
+        if len(self.tail) >= self.count:
+            if self.count:
+                self.tail.pop(0)
+
+        if len(self.tail) < self.count:
+            self.tail.append(Block(self.game, self.host.pos))
+
+    def render(self, surf, offset):
+        img = self.game.assets[(self.host.type + "/" + "tail")]
+        t_len = len(self.tail)
+        for idx, block in enumerate(self.tail):
+            # a_val = remap(idx, 0, t_len, 50, 255)
+
+            # img.set_alpha(int(a_val))
+            block.render(surf, img, offset)
+
+
 class Block:
     def __init__(self, game, pos):
         self.game = game
-        self.pos = list(pos)
+        self.pos = tuple(pos)
 
     def get_global_pos(self, offset=(0, 0)):
         return (
@@ -44,7 +77,9 @@ class Entity(Block):
 
     def render(self, surf, offset=[0, 0]):
         self.tail.render(surf, offset)
-        img = pygame.transform.rotate(self.game.assets[self.type], self.rotate)
+        img = pygame.transform.rotate(
+            self.game.assets[self.type + "/" + "head"], self.rotate
+        )
 
         super().render(surf, img, offset)
 
@@ -52,17 +87,17 @@ class Entity(Block):
         if frame % self.update_time == 0 and not self.check_tile_collision():
             self.change_rotation()
             self.tail.update()
-
             self.pos = add_vector(self.pos, self.direction)
-
             return True
         return False
 
     def check_tile_collision(self):
         c_pos = self.game.tilemap.get_collision_pos()
-        if add_vector(self.direction, self.pos) in c_pos:
+        my_pos = tuple(add_vector(self.direction, self.pos))
+        if my_pos in c_pos or my_pos in self.game.collide_pos:
             self.death += 1
             return True
+
         return False
 
     def change_direction(self, direction=[0, 0]):
@@ -82,41 +117,9 @@ class Entity(Block):
         self.tail.count += amount
 
 
-class Player(Entity):
-    def __init__(self, game, pos):
-        super().__init__(game, pos, "player", 12, 1)
-
-
-class Tail:
-    def __init__(self, host, game, t_count):
-        self.host = host
-        self.game = game
-        self.tail = []
-
-        self.count = t_count
-
-    def get_global_pos(self, loc, offset=[0, 0]):
-        return (
-            loc[0] * self.game.size - offset[0],
-            loc[1] * self.game.size - offset[1],
-        )
-
-    # Execute it before updating host
-    def update(self):
-        if len(self.tail) >= self.count:
-            self.tail.pop(0)
-
-        if len(self.tail) < self.count:
-            self.tail.append(Block(self.game, self.host.pos))
-
-    def render(self, surf, offset):
-        for block in self.tail:
-            block.render(surf, self.game.assets["tail"], offset)
-
-
 class Enemy(Entity):
-    def __init__(self, game, pos):
-        super().__init__(game, pos, "enemy", 10, 3)
+    def __init__(self, game, e_type, pos):
+        super().__init__(game, pos, e_type, 13, randint(0, 9))
 
         # for A-Star
         self.nodemap = self.game.tilemap.copy()
@@ -145,14 +148,22 @@ class Enemy(Entity):
                 y = y // abs(y)
             self.direction = [x, y]
         else:
-            print("NOpe")
+            return False
 
     def update(self, frame):
-        if random() > 0.9:
-            while True:
+        dist = (
+            (self.goal.pos[0] - self.pos[0]) ** 2
+            + (self.goal.pos[1] - self.pos[1]) ** 2
+        ) ** 0.5
+        print(dist)
+        if 1:
+            while 1:
                 my_path = self.a_star()
+                if my_path == False:
+                    break
                 if my_path:
                     self.change_direction(my_path)
+
                     break
 
         if super().update(frame):
@@ -184,6 +195,7 @@ class Enemy(Entity):
     def a_star(self):
         if len(self.openset) == 0:
             print("No Solution")
+            self.death += 1
             return False
         else:
             current = self.get_current()
@@ -193,8 +205,12 @@ class Enemy(Entity):
             self.closeset.append(current)
 
             for neighbor in current.get_neighbours(self.nodemap.map):
-                tentG = current.g + 1
+                if neighbor.type == "wall":
+                    continue
+                if tuple(neighbor.pos) in self.game.collide_pos:
+                    continue
 
+                tentG = current.g + 1
                 if tentG < neighbor.g:
                     self.cameFrom[loc_to_str(neighbor.pos)] = current
                     neighbor.g = tentG
@@ -203,3 +219,8 @@ class Enemy(Entity):
                     if neighbor not in self.closeset:
                         self.openset.append(neighbor)
         return False
+
+
+class Player(Entity):
+    def __init__(self, game, pos):
+        super().__init__(game, pos, "player", 9, 0)

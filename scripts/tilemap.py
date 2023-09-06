@@ -30,7 +30,10 @@ class Tile:
         return self.g
 
     def heuristics(self, goal):
-        self.h = abs(self.pos[0] - goal.pos[0]) + abs(self.pos[1] - goal.pos[1])
+        self.h = (
+            (self.pos[0] - goal.pos[0]) ** 2 + (self.pos[1] - goal.pos[1]) ** 2
+        ) ** 0.5
+        # self.h = abs(self.pos[0] - goal.pos[0]) + abs(self.pos[1] - goal.pos[1])
         return self.h
 
     def get_neighbours(self, nodemap):
@@ -41,6 +44,7 @@ class Tile:
             )
             if neighbour_loc in nodemap:
                 result.append(nodemap[neighbour_loc])
+
         return result
 
 
@@ -48,7 +52,7 @@ class Tilemap:
     def __init__(self, game, map={}):
         self.game = game
         self.map = map
-        
+
     def reset_cost(self):
         for tile in self.map.values():
             tile.g, tile.h, tile.f = 10**10, 0, 0

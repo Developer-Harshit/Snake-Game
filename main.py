@@ -41,9 +41,8 @@ class Game:
         self.tilemap = Tilemap(self)
         self.tilemap.load("test.json")
 
-        # self.player = Player(self)
         self.player = Player(self, (2, 2))
-        self.enemy = Enemy(self, (6, 6))
+        self.enemy = Enemy(self, "archer", (6, 6))
 
         self.scroll = [0, 0]
 
@@ -62,16 +61,19 @@ class Game:
         self.assets = {
             "ground": load_images("ground", (size, size)),
             "wall": load_images("wall", (size, size)),
-            "player": load_image("player.png", (size, size)),
-            "enemy": load_image("enemy.png", (size, size)),
-            "tail": load_image("tail.png", (size, size)),
+            "player/head": load_image("player/head.png", (size, size)),
+            "player/tail": load_image("player/tail.png", (size, size)),
+            "enemy/head": load_image("enemy/head.png", (size, size)),
+            "enemy/tail": load_image("enemy/tail.png", (size, size)),
+            "archer/head": load_image("archer/head.png", (size, size)),
+            "archer/tail": load_image("archer/tail.png", (size, size)),
         }
 
     def run(self):
         running = True
         frame = 0
         while running:
-            # Handling scroll -----------------------------------------------------|
+            # Handling scroll ------------------------------------------------------------------------------|
 
             p_pos = self.player.get_rect().center
 
@@ -82,31 +84,48 @@ class Game:
             self.scroll[1] += (
                 p_pos[1] - self.display.get_height() / 2 - self.scroll[1]
             ) / (self.size)
-            #
-            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
-            # For Background ------------------------------------------------------|
+            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+            # ----------------------------------------------------------------------------------------------|
+            # Collision_Blocks -----------------------------------------------------------------------------|
+            self.collide_pos = []
+            for block in self.player.tail.tail:
+                if block.pos == self.player.pos:
+                    continue
+                self.collide_pos.append(tuple(block.pos))
+
+            for block in self.enemy.tail.tail:
+                if block.pos == self.enemy.pos:
+                    continue
+                self.collide_pos.append(tuple(block.pos))
+
+            # For Background -------------------------------------------------------------------------------|
 
             self.display.fill(BG_COLOR)
 
             self.tilemap.render(self.display, render_scroll)
 
             self.display.blit(self.bg_layer, (0, 0))
-            # For Player ----------------------------------------------------------|
+            # ----------------------------------------------------------------------------------------------|
+
+            # For Player -----------------------------------------------------------------------------------|
             self.player.update(frame)
 
             self.player.render(self.display, render_scroll)
             if self.player.death > 0:
                 self.player = Player(self, (2, 2))
 
-            # For Enemy -----------------------------------------------------------|
+            # ----------------------------------------------------------------------------------------------|
+
+            # For Enemy ------------------------------------------------------------------------------------|
             self.enemy.update(frame)
 
             self.enemy.render(self.display, render_scroll)
             if self.enemy.death > 0:
-                self.enemy = Enemy(self, (2, 2))
+                self.enemy = Enemy(self, "archer", (2, 2))
+            # ----------------------------------------------------------------------------------------------|
 
-            # Checking Events -----------------------------------------------------|
+            # Checking Events ------------------------------------------------------------------------------|
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -118,6 +137,7 @@ class Game:
                         running = False
                         # self.quit()
                     if event.key == pygame.K_SPACE:
+                        self.player.tail.count += 1
                         pass
                     if event.key == pygame.K_w:
                         self.player.change_direction((0, -1))
@@ -131,15 +151,17 @@ class Game:
                     pass
                 if event.type == pygame.KEYUP:
                     pass
+            # ----------------------------------------------------------------------------------------------|
 
+            # Bliting in screen ----------------------------------------------------------------------------|
             self.screen.blit(self.display, (0, 0))
             pygame.display.update()
             self.clock.tick(60)
             self.resize()
             frame += 1
+            # ----------------------------------------------------------------------------------------------|
 
     def quit(self):
-        # Quit --------------------------------------------------------------------|
         pygame.quit()
         sys.exit()
         exit()
@@ -149,6 +171,6 @@ if __name__ == "__main__":
     with cProfile.Profile() as profile:
         Game().run()
     result = pstats.Stats(profile)
-    result.sort_stats(pstats.SortKey.TIME)
-    result.dump_stats("prof/result.prof")
+    # result.sort_stats(pstats.SortKey.TIME)
+    # result.dump_stats("prof/result.prof")
 print("Game Over")

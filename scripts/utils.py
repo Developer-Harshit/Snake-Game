@@ -24,6 +24,11 @@ def load_images(path, scale=False):
     return images
 
 
+def remap(value, ti, tf, si, sf):
+    result = ((value - ti) * (sf - si) / (tf - ti)) + si
+    return result
+
+
 def add_vector(one, two):
     return (one[0] + two[0], one[1] + two[1])
 
